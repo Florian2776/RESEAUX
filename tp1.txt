@@ -968,5 +968,15 @@ unix  2      [ ]         DGRAM                    91975
 unix  2      [ ]         DGRAM                    71443    
 unix  3      [ ]         STREAM     CONNECTE      71597 
 
+netstat | grep telnet
+tcp        0      0 inf-srv-nettools:telnet sct-10-9faf-1372.:39220 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-12-28f9-1372.:37332 TIME_WAIT  
+tcp        0      0 inf-srv-nettools:telnet sct-11-d7dd-1372.:47580 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-11-d75d-1372.:47536 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-11-d6a9-1372.:47246 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet 10.0.111.88:44923       ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-11-d7cb-1372.:36080 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-11-d7d3-1372.:51976 ESTABLISHED
+tcp        0      0 inf-srv-nettools:telnet sct-10-072f-1372.:40996 ESTABLISHED
 
 
