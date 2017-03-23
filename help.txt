@@ -1,0 +1,7 @@
+Ces codes peuvent etre utile:
+http://lig-membres.imag.fr/sicard/Exam/ExamReseau2004RICM1.pdf
+://jamesnorthway.net/tftp/tftp.html
+https://github.com/labcoder/simple-tftp
+https://www.classes.cs.uchicago.edu/archive/1999/winter/CS219/projects/project1/project1.html
+
+
