@@ -1,10 +1,15 @@
-#Ceci est une aide du tp 7 et 8.
+﻿#Ceci est une aide du tp 7 et 8.
 #Aucun résultat concluant n'est garanti.
 
 Exercice 1:
 
 1)
-La taille maximale d'un fichier que l'on peut envoyer par le protocole tftp semble être 512x512 octets, c'est à dire 262144octets. Ceci s'explique par le fait que un paquet ne peut contenir que 512 octets de données du fichier à envoyer et que ces paquets de données sont envoyés par blocs. Il y a 1 à 512 blocs.
+La taille maximale d'un fichier que l'on peut envoyer par le protocole tftp semble être 512x512 octets, 
+c'est à dire 262144octets. Ceci s'explique par le fait que un paquet ne peut contenir que 512 octets de 
+données du fichier à envoyer et que ces paquets de données sont envoyés par blocs. Il y a 1 à 512 blocs.
+
+Mais ne serait-ce pas plus en sachant que il y a 2 octets de disponibles pour les numéros de blocs 
+et que un unsigned int va de 0 à 65535 (on exclu ici le 0) pour 2 octets ? -> 512x65535 octets
 
 2)
 Les entiers doivent être des entiers sur un octets pour respecter le format des codes d'entête et d'erreurs.
@@ -12,26 +17,33 @@ Les entiers doivent être des entiers sur un octets pour respecter le format des
 3)
 Client --demande de lecture du fichier bonjour.txt -->Serveur
 Serveur --envoie le premier bloc de données de 512 octets-->Client
-Client --acquitement 1 pour confirmer la reception des données-->Serveur
+Client --acquittement 1 pour confirmer la reception des données-->Serveur
 Serveur --envoie du deuxième bloc de 12 octets-->client
-Client --acquitement final-->Serveur
+Client --acquittement final-->Serveur
 Serveur WAIT --> nouvelle denande RRQ ? --> pas de réponse donc non
 --> connexion interrompue
 
 4)
 Si le premier paquet est perdu, il y a réémission de celui-ci par le serveur 
-car le serveur n'aura pas reçu d'acquitement de la part du client.
+car le serveur n'aura pas reçu d'acquittement de la part du client.
 
-Si le premier ack est perdu, le premier paquet sera réémi pari le serveur également et un nouveau ack sera attendu en conséquence.
+Si le premier ack est perdu, le premier paquet sera réémi pari le serveur également et un nouveau ack 
+sera attendu en conséquence.
 
-Si le 1er ack arrive après le deuxième, le serveur devrait envoyer un message d'erreur. Le numéro de bloc attendu étant différent de celui attendu par le serveur, l'erreur sera détectée. Probablement erreur opérattion TFTP illégale ???
+Si le 1er ack arrive après le deuxième, le serveur devrait envoyer un message d'erreur. 
+Le numéro de bloc attendu étant différent de celui attendu par le serveur, 
+l'erreur sera détectée. Probablement erreur opérattion TFTP illégale ???
 
 5)
-SI le dernier ack est perdu, le dernier block de paquet est réenvoyé et un autre acquitement attendu. Ensuite, il y a une attente et la connexion est rompue si aucun autre paquet n'est envoyé.
-Si le premier RRQ est perdu, cela veut dire que le serveur ne recevra jamais de demande de connexion de la part du client. Il n'y a donc pas d'envoie de données pour transférer le fichier car pas de connexion client/serveur. Le client doit envoyer à nouveau une requète RRQ.
+SI le dernier ack est perdu, le dernier block de paquet est réenvoyé et un autre acquittement attendu. 
+Ensuite, il y a une attente et la connexion est rompue si aucun autre paquet n'est envoyé.
+Si le premier RRQ est perdu, cela veut dire que le serveur ne recevra jamais de demande de connexion 
+de la part du client. Il n'y a donc pas d'envoie de données pour transférer le fichier car 
+pas de connexion client/serveur. Le client doit envoyer à nouveau une requète RRQ.
 
 6)
-Si le premier RRQ est dupliqué par le réseaux, cela va pauser un problème. Le serveur va approuver la première requète mais va envoyer un message d'erreur pour la seconde. Opération TFTP illégale ???
+Si le premier RRQ est dupliqué par le réseaux, cela va pauser un problème. Le serveur va approuver 
+la première requète mais va envoyer un message d'erreur pour la seconde. Opération TFTP illégale ???
 
 Exercice 2:
 
@@ -42,10 +54,10 @@ Client -------------RRQ, demande de lecture---------------> Serveur
       | X <--------envoie du bloc 1------------------------|
       |                                                    |  
       |<------------envoie du bloc 1-----------------------|
-      |-------------acquitement 1------------------------->|
+      |-------------acquittement 1------------------------>|
       |                                                    |
       |<-------------envoie du bloc 2----------------------|
-      |--------------acquitement 2------------------------>|
+      |--------------acquittement 2----------------------->|
       |                                                    |
       |                                                    |
 	4-
@@ -55,10 +67,10 @@ Client ---------------RRQ, demande de lecture------------->Serveur
       |                                                    |
       |                                                    |
       |<-----------------bloc 1----------------------------|
-      |-----------------acquitement 1--------------------->|
+      |-----------------acquittement 1--------------------->|
       |                                                    |
       |<-----------------bloc 2----------------------------|
-      |-----------------acquitement 2--------------------->|
+      |-----------------acquittement 2--------------------->|
       |                                                    |
 
 	4-
@@ -67,24 +79,24 @@ Client ---------------RRQ, demande de lecture------------->Serveur
       |<----------------bloc 1-----------------------------|
       |                                                    |
       |<----------------bloc 1-----------------------------|
-      |----------------acquitement 1---------------------->|
+      |----------------acquittement 1--------------------->|
       |                                                    |
       |<----------------bloc 2-----------------------------|
-      |----------------acquitement 1---------------------->|
+      |----------------acquittement 1--------------------->|
       |<---------------Erreur, non défini ???--------------|
-      |----------------acquitement 2---------------------->|
+      |----------------acquittement 2--------------------->|
       |                                                    |
 
 	5-
 Client ----------------RRQ, demande de lecture------------> Serveur
       |                                                    |
       |<-------------------bloc 1--------------------------|
-      |------------------acquitement 1-------------------->|
+      |------------------acquittement 1------------------->|
       |<-------------------bloc 2--------------------------|
       |                                                    |
       |                                                    |
       |<------------------bloc 2---------------------------|
-      |-------------------acquitement 2------------------->|
+      |-------------------acquittement 2------------------>|
       |                                                    |
 
 	6-
@@ -103,3 +115,66 @@ Client ---------------------RRQ---------------------------->|Serveur
       |                       ----------------------------->|
       |<-----------------erreur opé TFTP illégale ???-------|
       |                                                     |
+
+Exercice 3:
+tftp_make_ack -> ACK acquitte les paquets DATA, paquets de la forme ACK (2 octets), bloc n (2 octets)
+
+tftp_make_rrq -> requète, demande de lecture du client vers le serveur,
+                 paquets de la forme:
+                 RRQ (2 octets), Filename (string), 0 (1 octet), "octet" (string) et 0 (1 octet).
+tftp_make_data -> DATA acquitte RRQ et ACK, 
+                  envoie du fichier demandé par blocs de 512 octets soit 512 caractères si les 
+                  caractères ASCII sont utilisés, les blocs vont de 1 à 512, les paquets sont de cette forme:
+                  DATA (2 octets), Block n (2 octets), Données (1 à 512 octets)
+tftp_make_error -> ERROR acquitte les paquets DATA, les paquets RRQ et ACK
+
+Def ces fonctions qui créent un paquet tftp pour chaque type 
+et mettent à jour la valeur length avec la taille des données. 
+retourne 0 si tout va bien, sinon -1. -> test de bon déroulement
+
+int tftp_make_ack(char *buffer, size_t *length, uint16_t block)
+{		
+	//on remplit le buffer avec le code de ACK (type 4)
+        //on remplit ensuite le buffer avec le numéro de bloc sur 2 octets max
+        //en sachant que : int entier unsigned de 0 à 65535 -> 2 octets
+	//Cela suppose t'il que le buffer ait seulement deux cases ?
+	//size_t is an unsigned integer type of at least 16 bit 
+	
+	//const size_t tailleBuf = 2;
+	buffer[0] = 4; // surement pas 0 et 1 mais quelque part dans le buffer
+	buffer[1] = block; //block est à la suite du précédent
+        length = sizeof buffer;
+}
+
+int tftp_make_rrq(char *buffer, size_t *length, const char *fichier)
+{
+	//on reprend l emplacement du buffer depuis le dernier envoie ?
+	buffer[x] = 1;
+	// faire des malloc en premier ?
+	for //taille du titre du fichier
+		buffer[i] = //lettre du titre du fichier;
+	for //5 cases?
+	buffer[]=0;
+	buffer[] = // lettres de "octet";
+	buffer[]=0;
+	length = sizeof buffer;
+
+}
+
+int tftp_make_data(char *buffer, size_t *length, uint16_t block, const
+char *data, size_t n)
+{
+
+
+
+}
+
+
+int tftp_make_error(char *buffer, size_t *length, uint16_t errorcode,
+const char *message)
+{
+
+
+
+
+}
