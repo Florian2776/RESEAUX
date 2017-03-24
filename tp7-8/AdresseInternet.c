@@ -21,7 +21,8 @@ AdresseInternet * AdresseInternet_new(const char* nom, uint16_t port) {
   if (nom == NULL || adress == NULL) {
     return NULL;
   }
-  adress -> sockAddr = malloc(sizeof(struct sockadrr_storage));
+  //~ adress -> sockAddr = malloc(sizeof(struct sockadrr_storage));
+  //~ adress -> sockAddr = malloc(sizeof(adress -> sockAddr));
   strcpy((*adress).nom, nom);
   uint16_t p = htons(port);
   sprintf((*adress).service, "%d", p);
