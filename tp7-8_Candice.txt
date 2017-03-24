@@ -116,6 +116,10 @@ Client ---------------------RRQ---------------------------->|Serveur
       |<-----------------erreur opé TFTP illégale ???-------|
       |                                                     |
 
+Finalement, je pense qu'il n'y a pas de code erreur en cas de réémission de blocs ou
+de double réception de RRQ. Le serveur agit en conséquence en renvoyant ce qui est 
+considéré comme maquant par le client.
+
 Exercice 3:
 tftp_make_ack -> ACK acquitte les paquets DATA, paquets de la forme ACK (2 octets), bloc n (2 octets)
 
