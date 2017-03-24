@@ -1,0 +1,105 @@
+#Ceci est une aide du tp 7 et 8.
+#Aucun résultat concluant n'est garanti.
+
+Exercice 1:
+
+1)
+La taille maximale d'un fichier que l'on peut envoyer par le protocole tftp semble être 512x512 octets, c'est à dire 262144octets. Ceci s'explique par le fait que un paquet ne peut contenir que 512 octets de données du fichier à envoyer et que ces paquets de données sont envoyés par blocs. Il y a 1 à 512 blocs.
+
+2)
+Les entiers doivent être des entiers sur un octets pour respecter le format des codes d'entête et d'erreurs.
+
+3)
+Client --demande de lecture du fichier bonjour.txt -->Serveur
+Serveur --envoie le premier bloc de données de 512 octets-->Client
+Client --acquitement 1 pour confirmer la reception des données-->Serveur
+Serveur --envoie du deuxième bloc de 12 octets-->client
+Client --acquitement final-->Serveur
+Serveur WAIT --> nouvelle denande RRQ ? --> pas de réponse donc non
+--> connexion interrompue
+
+4)
+Si le premier paquet est perdu, il y a réémission de celui-ci par le serveur 
+car le serveur n'aura pas reçu d'acquitement de la part du client.
+
+Si le premier ack est perdu, le premier paquet sera réémi pari le serveur également et un nouveau ack sera attendu en conséquence.
+
+Si le 1er ack arrive après le deuxième, le serveur devrait envoyer un message d'erreur. Le numéro de bloc attendu étant différent de celui attendu par le serveur, l'erreur sera détectée. Probablement erreur opérattion TFTP illégale ???
+
+5)
+SI le dernier ack est perdu, le dernier block de paquet est réenvoyé et un autre acquitement attendu. Ensuite, il y a une attente et la connexion est rompue si aucun autre paquet n'est envoyé.
+Si le premier RRQ est perdu, cela veut dire que le serveur ne recevra jamais de demande de connexion de la part du client. Il n'y a donc pas d'envoie de données pour transférer le fichier car pas de connexion client/serveur. Le client doit envoyer à nouveau une requète RRQ.
+
+6)
+Si le premier RRQ est dupliqué par le réseaux, cela va pauser un problème. Le serveur va approuver la première requète mais va envoyer un message d'erreur pour la seconde. Opération TFTP illégale ???
+
+Exercice 2:
+
+1)
+	4-
+Client -------------RRQ, demande de lecture---------------> Serveur
+      |                                                    |
+      | X <--------envoie du bloc 1------------------------|
+      |                                                    |  
+      |<------------envoie du bloc 1-----------------------|
+      |-------------acquitement 1------------------------->|
+      |                                                    |
+      |<-------------envoie du bloc 2----------------------|
+      |--------------acquitement 2------------------------>|
+      |                                                    |
+      |                                                    |
+	4-
+Client ---------------RRQ, demande de lecture------------->Serveur
+      |                                                    |
+      |<-----------------bloc 1----------------------------|
+      |                                                    |
+      |                                                    |
+      |<-----------------bloc 1----------------------------|
+      |-----------------acquitement 1--------------------->|
+      |                                                    |
+      |<-----------------bloc 2----------------------------|
+      |-----------------acquitement 2--------------------->|
+      |                                                    |
+
+	4-
+Client ---------------RRQ, demande de lecture------------->Serveur
+      |                                                    |
+      |<----------------bloc 1-----------------------------|
+      |                                                    |
+      |<----------------bloc 1-----------------------------|
+      |----------------acquitement 1---------------------->|
+      |                                                    |
+      |<----------------bloc 2-----------------------------|
+      |----------------acquitement 1---------------------->|
+      |<---------------Erreur, non défini ???--------------|
+      |----------------acquitement 2---------------------->|
+      |                                                    |
+
+	5-
+Client ----------------RRQ, demande de lecture------------> Serveur
+      |                                                    |
+      |<-------------------bloc 1--------------------------|
+      |------------------acquitement 1-------------------->|
+      |<-------------------bloc 2--------------------------|
+      |                                                    |
+      |                                                    |
+      |<------------------bloc 2---------------------------|
+      |-------------------acquitement 2------------------->|
+      |                                                    |
+
+	6-
+
+Client|---------------------RRQ------------------->    X   | Serveur
+      |                                                    |
+      |                                                    |
+      |---------------------RRQ--------------------------->|
+      |                                                    |
+
+	6-
+Client ---------------------RRQ---------------------------->|Serveur
+      |                                                     |
+      |--------------------RRQ                              |
+      |<--------------------bloc 1--------------------------|
+      |                       ----------------------------->|
+      |<-----------------erreur opé TFTP illégale ???-------|
+      |                                                     |
