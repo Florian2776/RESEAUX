@@ -1,10 +1,25 @@
-#ifndef ADRESSEINTERNET_H_
-#define ADRESSEINTERNET_H_
+#ifndef _AddresseInternet_
+#define _AddresseInternet_
 
-#include <stdint.h>
-#include <netinet/ip.h> // Pour in_port_t
 
-#include "AdresseInternetType.h"
+#define _DNS_NAME_MAX_SIZE 256
+#define _SERVICE_NAME_MAX_SIZE 20
+#include <stdio.h>
+#include <stdlib.h>
+#include <inttypes.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <string.h>
+#include <unistd.h>
+
+typedef struct AdresseInternet {
+  struct sockaddr_storage sockAddr;
+  char nom[_DNS_NAME_MAX_SIZE];
+  char service[_SERVICE_NAME_MAX_SIZE];
+} AdresseInternet;
 
 /** 
  * construit une adresse internet à partir d’un éventuel nom (sous

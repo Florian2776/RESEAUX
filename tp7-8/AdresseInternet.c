@@ -1,159 +1,182 @@
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <errno.h>
-#include <netinet/ip.h> // Pour in_port_t
-#include "/usr/include/netdb.h"
+#include <stdlib.h>
+#include <inttypes.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <string.h>
+#include <unistd.h>
+#include "AdresseInternet.h"
 
-#include "AdresseInternetType.h"
+#define MAXHOST      1025
+#define FUN_SUCCESS  0
+#define FUN_FAILURE  -1
+#define PORT_ERROR   0
 
-/** 
- * construit une adresse internet à partir d’un éventuel nom (sous
- * forme DNS ou IP) et d’un numéro de port. L’argument adresse est un
- * pointeur vers une variable de type AdresseInternet, qui est remplie
- * avec l’adresse internet construite et allouée. Valeur de retour :
- * en cas de succès, la fonction renvoie le pointeur. En cas d’erreur
- * la fonction renvoie NULL.
- */
-AdresseInternet * AdresseInternet_new(const char* nom, uint16_t port) {
-  AdresseInternet *adress = malloc(sizeof *adress);
-  if (nom == NULL || adress == NULL) {
-    return NULL;
+#define FNCT_T(comp)     \
+    if (comp) {           \
+      return FUN_FAILURE; \
+    }
+
+
+AdresseInternet *AdresseInternet_new (const char* addresse, uint16_t port) {
+  
+  AdresseInternet *addr = malloc (sizeof(*addr));  
+   
+   if (addr == NULL) {
+     return NULL;
   }
-  //~ adress -> sockAddr = malloc(sizeof(struct sockadrr_storage));
-  //~ adress -> sockAddr = malloc(sizeof(adress -> sockAddr));
-  strcpy((*adress).nom, nom);
-  uint16_t p = htons(port);
-  sprintf((*adress).service, "%d", p);
   
   struct addrinfo hints;
-  struct addrinfo *result;
-  int s;
   memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_INET;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = 0;
+  hints.ai_flags = AI_PASSIVE;
+ 
+  
+  struct addrinfo *result;  
+  sprintf(addr -> service, "%u", port);
+  
+  int s;
+
+  s = getaddrinfo( addresse, addr -> service, &hints, &result);
+ 
+
+  if (s != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+    exit(EXIT_FAILURE);
+  }
+
+  if (result != NULL) {
+    (addr -> sockAddr).ss_family = result -> ai_family;
+  }  
+  strcpy (addr -> nom, addresse);  
+  free(addr);
+  return addr;
+}
+
+AdresseInternet *AdresseInternet_any(uint16_t port) {
+    
+  AdresseInternet *addr = malloc (sizeof(*addr));  
+   if (addr == NULL) {
+     return NULL;
+  }
+  
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = 0;
   hints.ai_flags = 0;
+ 
+   
+  struct addrinfo *result;  
+  sprintf(addr -> service, "%u", port);
   
-  s = getaddrinfo(NULL, NULL, &hints, &result);
+  int s;
+  s = getaddrinfo( NULL, addr -> service, &hints, &result);
   if (s != 0) {
-       fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-       exit(EXIT_FAILURE);
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+    exit(EXIT_FAILURE);
   }
 
-  return adress;
-}
-
-/**
- * Idem, mais construit une adresse internet correspondant à toutes
- * les interfaces réseau à partir d’un numéro de port.
- */
-AdresseInternet * AdresseInternet_any(uint16_t port) {    
-  AdresseInternet *adress = malloc(sizeof *adress);
-  if (adress == NULL) {
-    return NULL;
+  if (result != NULL) {
+    (addr -> sockAddr).ss_family = result -> ai_family;
   }
-  strcpy((*adress).nom, "0.0.0.0");
-  uint16_t p = htons(port);
-  sprintf((*adress).service, "%d", p);
-  return adress;
+  
+  free(addr);
+  return addr;
 }
 
-/**
- * Idem, mais construit une adresse internet correspondant à
- * l'interface loopback à partir d’un numéro de port.
- */
-AdresseInternet * AdresseInternet_loopback(uint16_t port) {
-  AdresseInternet *adress = malloc(sizeof *adress);
-  if (adress == NULL) {
-    return NULL;
-  }
-  strcpy((*adress).nom, "127.0.0.0");
-  uint16_t p = htons(port);
-  sprintf((*adress).service, "%d", p);
-  return adress;  
-}
+AdresseInternet *AdresseInternet_loopback(uint16_t port) {
 
-/** 
- * libère la mémoire allouée par AdresseInternet, any et loopback
- */
-void AdresseInternet_free(AdresseInternet *adresse) {
-    free(&(*adresse).sockAddr);
-    free(adresse);
-    adresse = NULL;
-}
-
-/**
- * extrait d’une adresse internet l’adresse IP et le port
- * correspondants. L’argument adresse pointe vers un buffer 
- * contenant une adresse. L’argument nomDNS (resp. nomPort)
- * pointe vers un buffer alloué de taille au moins tailleDNS
- * (resp. taillePort) dans lequel la fonction va écrire une chaîne
- * de caractère (terminant par un 0) contenant le nom (resp. le port)
- * associé à l’adresse fournie. Lorsque cela est possible, la
- * résolution de nom est faite.  Si nomDNS ou nomPort est NULL,
- * l’extraction correspondante ne sera pas effectuée. Les deux ne
- * peuvent pas être NULL en même temps.  Valeur de retour : rend 0 en
- * cas de succès, et -1 en cas d’erreur.
- */
-int AdresseInternet_getinfo(AdresseInternet *adresse,
-			    char *nomDNS, int tailleDNS, char *nomPort, int taillePort) {
-  if (adresse == NULL) {
-    return -1;
+  struct sockaddr_in addr;
+  addr.sin_family = AF_INET;
+  addr.sin_port = port;
+  addr.sin_addr.s_addr = INADDR_LOOPBACK;
+  
+  char host[MAXHOST];
+  int errnum;
+  if ((errnum = getnameinfo((struct sockaddr *) &addr, sizeof(addr), host, sizeof(host), NULL, 0, 0)) != 0) {
+    fprintf(stderr, "getnameinfo: %s\n", gai_strerror(errnum));
+    exit(EXIT_FAILURE);
   }  
-  nomDNS = adresse -> nom;
-  tailleDNS = sizeof(adresse -> nom);
-  nomPort = adresse -> service;
-  if (nomDNS == NULL || nomPort == NULL) {
-    return -1;
-  }   
-  return 0;
+  return AdresseInternet_new (host, port);
 }
 
-int AdresseInternet_getIP(const AdresseInternet *adresse, char *IP, int tailleIP);
-
-/**
- * extrait le numéro de port d’une adresse internet. L'argument
- * adresse se comporte comme dans la fonction
- * précédente.  Valeur de retour : renvoie le port en cas de succès,
- * et 0 en cas d’erreur (par exemple si adresse n’est pas
- * initialisée).
-*/
-uint16_t AdresseInternet_getPort(const AdresseInternet *adresse);
-
-/**
- * rend le domaine internet de l'adresse (AF_INET ou AF_INET6) ou -1
- * si l'adresse n'est pas initialisée.
- */
-int AdresseInternet_getDomain(const AdresseInternet *adresse);
-
-/**
- * Construit une adresse internet à partir d'une structure sockaddr La
- * structure addresse doit être suffisamment grande pour pouvoir
- * accueillir l’adresse.  Valeur de retour : 0 en cas de succès, -1 en
- * cas d’échec.
- */
-int sockaddr_to_AdresseInternet(const struct sockaddr *addr, AdresseInternet *adresse);
-/**
- * Construit une structure sockaddr à partir d'une adresse
- * internet. La structure addr doit être suffisamment grande pour
- * pouvoir accueillir l’adresse.  Valeur de retour : 0 en cas de
- * succès, -1 en cas d’échec.
- */
-int AdresseInternet_to_sockaddr(const AdresseInternet *adresse, struct sockaddr *addr);
-/**
- * compare deux adresse internet adresse1 et adresse2.  Valeur de
- * retour : rend 0 si les adresses sont différentes, 1 si elles sont
- * identiques (même IP et même port), et -1 en cas d’erreur.
- *
- */
-int AdresseInternet_compare(const AdresseInternet *adresse11, const AdresseInternet *adresse22);
-
-/* copie une adresse internet dans une autre. Les variables doivent
-   être allouées. */
-int AdresseInternet_copy(AdresseInternet *adrdst, const AdresseInternet *adrsrc);
+AdresseInternet *AdresseInternet_loopback(uint16_t port);
+void AdresseInternet_free(AdresseInternet *addresse) {
+  free(addresse);
+}
 
 
+int AdresseInternet_getinfo(AdresseInternet *addresse, char *nomDNS,
+                                int tailleDNS, char *nomPort, int taillePort) {
+  FNCT_T(addresse == NULL);
+  if (nomDNS != NULL || nomPort != NULL) {
+    strncpy(nomDNS, addresse -> nom, tailleDNS);
+    strncpy(nomPort, addresse -> service, taillePort);
+    nomDNS += '0';
+    nomPort += '0';
+    return FUN_SUCCESS;
+  }  
+  return FUN_FAILURE;
+}
+int AdresseInternet_getIP(const AdresseInternet *addresse, char *IP,
+                                                                int tailleIP) {
+  FNCT_T(addresse == NULL);
+  strncpy( IP, addresse -> nom, tailleIP);
+  return FUN_SUCCESS;
+}
 
+uint16_t AdresseInternet_getPort(const AdresseInternet *addresse) {
+  if (addresse == NULL) {
+    return PORT_ERROR;
+  }
+  uint16_t  port = (uint16_t) strtol(addresse -> service, NULL, 16);  
+  return port;  
+}
+
+int AdresseInternet_getDomain(const AdresseInternet *addresse) {
+  
+  return addresse == NULL? FUN_FAILURE: (addresse -> sockAddr).ss_family;
+}
+
+
+int sockaddr_to_AdresseInternet(const struct sockaddr *addr,
+                                                   AdresseInternet *addresse) {
+  FNCT_T(addr == NULL);
+  FNCT_T(addresse == NULL);
+  addresse -> sockAddr.ss_family = addr -> sa_family; 
+  strcpy(addresse -> service, addr -> sa_data);
+  return FUN_SUCCESS;
+}
+                                                   
+int AdresseInternet_to_sockaddr(const AdresseInternet *addresse,
+                                                        struct sockaddr *addr) {
+  FNCT_T(addresse == NULL);
+  FNCT_T(addr == NULL);
+  addr -> sa_family = addresse -> sockAddr.ss_family;
+  strcpy(addr -> sa_data, addresse -> service);  
+  return FUN_SUCCESS;
+}
+
+int AdresseInternet_compare(const AdresseInternet *addrese1, 
+                                             const AdresseInternet *addrese2) {
+  FNCT_T(addrese1 == NULL);
+  FNCT_T(addrese2 == NULL);
+  size_t lgnth = sizeof(addrese1);
+  return memcmp(addrese1, addrese2, lgnth) == 0 ? FUN_SUCCESS : FUN_FAILURE;
+}
+
+int AdresseInternet_copy( AdresseInternet *addrdst, 
+                                             const AdresseInternet *addsrc) {
+  FNCT_T(addsrc == NULL);
+  FNCT_T(addrdst == NULL);
+  size_t lgn = sizeof(addsrc);
+  memcpy(addrdst, addsrc, lgn);
+  return FUN_SUCCESS;
+}
 
 
