@@ -4,14 +4,24 @@
 #include "socketUDP.h"
 #include "toolsTFTP.h"
 
+
 /**
  * Crée un paquet tftp de type ack en mettant à jour la variable length 
  * avec la taille des données écrites.
  * 
  * Valeur de retour : 0 si tout s'est bien passé, -1 sinon. 
  */
+ // uint16_t is an unsigned short
 int tftp_make_ack(char *buffer, size_t *length, uint16_t block) {
     // TODO
+	//copie les carateres de block pour les mettre dans le buffer
+	memcpy(block, buffer+sizeof(uint16_t), sizeof(uint16_t));
+	//length stock la taille actuelle du buffer
+	*length = sizeof(*buffer);
+	// ntohs converti les unsigned short integer netshort 
+	// d'un ordre network byte à un ordre host byte
+	block = ntohs(block);
+	
     return 0;
 }
 
@@ -23,6 +33,10 @@ int tftp_make_ack(char *buffer, size_t *length, uint16_t block) {
  */
 int tftp_make_rrq(char *buffer, size_t *length, const char *fichier) {
     // TODO
+	//copie le str pointé de fichier vers le buffer de taille du buffer plus unsigned short
+	strcpy(fichier, buffer+sizeof(uint16_t));
+	//length stock la taille actuelle du buffer
+	*length = sizeof(*buffer);
     return 0;
 }
 
@@ -34,7 +48,13 @@ int tftp_make_rrq(char *buffer, size_t *length, const char *fichier) {
  */
 int tftp_make_data(char *buffer, size_t *length, uint16_t block, const
                                                         char *data, size_t n) {
-    // TODO
+    memcpy(block, buffer+sizeof(uint16_t), sizeof(uint16_t));
+	block = ntohs(block);
+	// n est la taille des donnees
+	//on copie les donnes dans le buffer
+	memcpy(data, buffer+2*sizeof(uint16_t), n);
+	//mise a jour de length
+	*length = sizeof(*buffer);
     return 0;
 }
 
@@ -46,7 +66,10 @@ int tftp_make_data(char *buffer, size_t *length, uint16_t block, const
  */
 int tftp_make_error(char *buffer, size_t *length, 
                     uint16_t errorcode, const char *message) {
-    // TODO
+    memcpy(errorcode, buffer+sizeof(uint16_t), sizeof(errorcode));
+	errorcode = ntohs(errorcode);
+	memcpy(message, buffer+2*sizeof(uint16_t), sizeof(message));
+	*length = sizeof(*buffer);
     return 0;
 }
 
@@ -55,8 +78,15 @@ int tftp_make_error(char *buffer, size_t *length,
  */ 
 void tftp_send_error(SocketUDP *socket, const AdresseInternet *dst,
                                               uint16_t code, const char *msg) {
-    // TODO
-    return 0;
+    // htons : host to network short
+	code = htons(CODEOPE_ERROR);
+	int octet = sendto(*socket, *msg, sizeof(*msg), code /*flag*/, (struct sockaddr*)dst, sizeof(*dst));
+    
+	if(octet == -1){
+		printf("Les donnees n ont pas ete envoyees via le socket : %s\n", strerror(errno));
+		exit(1);
+	}
+	return 0;
 }
 
 /**

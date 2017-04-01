@@ -14,9 +14,15 @@ int initSocketUDP(SocketUDP *sock) {
 }
 
 int attacherSocketUDP(SocketUDP *sock, const char *adress, uint16_t port, int flags) {
+  sock->fd = socket(AF_INET, SOCK_DGRAM,0);
+  
   if (sock == NULL) {
       exit(EXIT_FAILURE);
   }  
+  if (sock->fd == -1) {
+	  printf("La creation de socket a echoue : %s\n", strerror(errno));
+      exit(1);
+  }
   // TODO
   
   return 0;  

@@ -6,6 +6,13 @@
 #include "AdresseInternet.h"
 #include "socketUDP.h"
 
+/* definition du code operation */
+#define CODEOPE_RRQ		1	//demande de lecture
+#define	CODEOPE_WRQ		2	//demande d ecriture
+#define	CODEOPE_DATA	3	//donnees
+#define	CODEOPE_ACK		4	//acquittement
+#define	CODEOPE_ERROR	5	//erreur
+
 /**
  * Crée un paquet tftp de type ack en mettant à jour la variable length 
  * avec la taille des données écrites.
