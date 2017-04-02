@@ -94,6 +94,7 @@ void tftp_send_error(SocketUDP *socket, const AdresseInternet *dst,
  * sur la socket socket à l'adresse dst.
  * La fonction se place en attente de réponse au plus TIMEOUT secondes.
  * Si elle reçoit une réponse valide (i.e. de type DATA 1), 
+ *
  * l’adresse de l’expéditeur est renseignée dans la variable
  * connexion, le paquet reçu dans reponse et sa taille dans replength.
  * Si elle reçoit une réponse non valide, un paquet d’erreur tftp est envoyé 
@@ -106,8 +107,37 @@ void tftp_send_error(SocketUDP *socket, const AdresseInternet *dst,
 int tftp_send_RRQ_wait_DATA_with_timeout(SocketUDP *socket,
                 const AdresseInternet *dst, const char *fichier,
                 AdresseInternet *connexion, char *reponse, size_t *replength) {
-    // TODO
-    return 0;
+    int time = 0;
+	// demande de connexion RRQ 
+	if (sendto(*socket, CODEOPE_RRQ, 0, (struct sockaddr*)dst, sizeof(*dst)) == -1){
+			perror("demande RRQ");
+			return -1;
+			exit(1);
+	}
+    //attente de connexion
+	int service;
+	while ((service = accept(socket, NULL, NULL)) != -1) {
+		process_connexion(service);
+		delay(1000);
+		time += 1;
+		if(time >= TIMEOUT){
+			perror("Invalide TIMEOUT");
+			exit(1);
+		}
+	}
+	
+	// si c'est différent de CODEOPE_DATA par exemple
+	if(recv(socket, *reponse, *replength, 0) == (-1 || CODEOPE_ERROR)){
+		perror("reponse");
+		return -1;
+		exit(1);
+	}
+	//récupération de l'adresse de l'expéduteur dans connexion
+	//connexion = 
+	
+	//...
+	
+	return 0;
 }
  
 /**
@@ -115,6 +145,7 @@ int tftp_send_RRQ_wait_DATA_with_timeout(SocketUDP *socket,
  * sur la socket socket à l'adresse dst.
  * En cas de dépassement du timeout renvoie la demande de connexion, 
  * au plus NB_MAX_ENVOI fois.
+ *
  * Si elle reçoit une réponse valide (i.e. de type DATA 1), 
  * l’adresse de l’expéditeur est renseignée dans la variable
  * connexion, le paquet reçu dans reponse et sa taille dans replength.
@@ -128,7 +159,43 @@ int tftp_send_RRQ_wait_DATA_with_timeout(SocketUDP *socket,
 int tftp_send_RRQ_wait_DATA(SocketUDP *socket,
                   const AdresseInternet *dst, const char *fichier,
                 AdresseInternet *connexion, char *reponse, size_t *replength) {
-    // TODO
+    
+	int time = 0;
+	int demandes = 0;
+	// demande de connexion RRQ 
+	if (sendto(*socket, CODEOPE_RRQ, 0, (struct sockaddr*)dst, sizeof(*dst)) == -1){
+			perror("demande RRQ");
+			return -1;
+			exit(1);
+	}
+    //attente de connexion
+	int service;
+	while ((service = accept(socket, NULL, NULL)) != -1) {
+		process_connexion(service);
+		delay(1000);
+		time += 1;
+		if(time >= TIMEOUT){
+			process_connexion(service);
+			demandes += 1;
+			if(demandes > NB_MAX_ENVOI){
+				perror("trop d envoi de demandes RRQ");
+				return -1;
+				exit(1);
+			}
+		}
+	}
+	
+	// si c'est différent de CODEOPE_DATA par exemple
+	if(recv(socket, *reponse, *replength, 0) == (-1 || CODEOPE_ERROR)){
+		perror("reponse");
+		return -1;
+		exit(1);
+	}
+	//récupération de l'adresse de l'expéduteur dans connexion
+	//connexion = 
+	
+	//...
+	
     return 0;
 }
                   
@@ -146,8 +213,41 @@ int tftp_send_RRQ_wait_DATA(SocketUDP *socket,
  */
 int tftp_send_DATA_wait_ACK(SocketUDP *socket,
             const AdresseInternet *dst, const char *paquet, size_t paquetlen) {
-    // TODO
-    return 0;
+    int time = 0;
+	int demandes = 0;
+	// envoi
+	if (sendto(*socket, *paquet, CODEOPE_DATA, (struct sockaddr*)dst, paquetlen)) == -1){
+			perror("envoi DATA");
+			return -1;
+			exit(1);
+	}
+	
+	while(recv(socket, *paquet, *paquetlen, 0)!=CODEOPE_ACK){
+		delay(1000);
+		time += 1;
+		if(time > TIMEOUT){
+			sendto(*socket, *paquet, CODEOPE_DATA, (struct sockaddr*)dst, paquetlen);
+			demandes += 1;
+			return 0;
+			if(demandes > NB_MAX_ENVOI){
+				perror("demandes sans reponses");
+				return -1;
+				exit(1);
+			}
+		}
+		
+	}
+	// attente de reception d un paquet de type ACK
+	if(recv(socket, *paquet, *paquetlen, 0) > CODEOPE_ACK){
+		perror("reponse");
+		return -1;
+		exit(1);
+	}
+	if(recv(socket, *paquet, *paquetlen, 0) < CODEOPE_ACK){
+		printf("paquets ignores");
+	}
+	
+    return 1;
 }
 
 /**
@@ -164,8 +264,41 @@ int tftp_send_DATA_wait_ACK(SocketUDP *socket,
  */
 int tftp_send_ACK_wait_DATA(SocketUDP *socket,
             const AdresseInternet *dst, const char *paquet, size_t paquetlen) {
-    // TODO
-    return 0;
+    int time = 0;
+	int demandes = 0;
+	// envoi
+	if (sendto(*socket, *paquet, CODEOPE_ACK, (struct sockaddr*)dst, paquetlen)) == -1){
+			perror("envoi ACK");
+			return -1;
+			exit(1);
+	}
+	
+	while(recv(socket, *paquet, *paquetlen, 0)!=CODEOPE_DATA){
+		delay(1000);
+		time += 1;
+		if(time > TIMEOUT){
+			sendto(*socket, *paquet, CODEOPE_ACK, (struct sockaddr*)dst, paquetlen);
+			demandes += 1;
+			return 0;
+			if(demandes > NB_MAX_ENVOI){
+				perror("demandes sans reponses");
+				return -1;
+				exit(1);
+			}
+		}
+		
+	}
+	// attente de reception d un paquet de type ACK
+	if(recv(socket, *paquet, *paquetlen, 0) > CODEOPE_DATA){
+		perror("reponse");
+		return -1;
+		exit(1);
+	}
+	if(recv(socket, *paquet, *paquetlen, 0) < CODEOPE_DATA){
+		printf("paquets ignores");
+	}
+	
+    return 1;
 }
 
 /**
@@ -182,7 +315,41 @@ int tftp_send_ACK_wait_DATA(SocketUDP *socket,
  */
 int tftp_send_last_ACK(SocketUDP *socket,
             const AdresseInternet *dst, const char *paquet, size_t paquetlen) {
-    // TODO
-    return 0;
+    
+	int time = 0;
+	int demandes = 0;
+	// envoi
+	if (sendto(*socket, *paquet, CODEOPE_ACK, (struct sockaddr*)dst, paquetlen)) == -1){
+			perror("envoi ACK");
+			return -1;
+			exit(1);
+	}
+	
+	while(recv(socket, *paquet, *paquetlen, 0)!=CODEOPE_DATA){
+		delay(1000);
+		time += 1;
+		if(time > TIMEOUT){
+			sendto(*socket, *paquet, CODEOPE_ACK, (struct sockaddr*)dst, paquetlen);
+			demandes += 1;
+			return 0;
+			if(demandes > NB_MAX_ENVOI){
+				perror("demandes sans reponses");
+				return -1;
+				exit(1);
+			}
+		}
+		
+	}
+	// attente de reception d un paquet de type ACK
+	if(recv(socket, *paquet, *paquetlen, 0) > CODEOPE_DATA){
+		perror("reponse");
+		return -1;
+		exit(1);
+	}
+	if(recv(socket, *paquet, *paquetlen, 0) < CODEOPE_DATA){
+		printf("paquets ignores");
+	}
+	
+	return 1;
 }
 
